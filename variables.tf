@@ -66,47 +66,80 @@ variable "target_service_accounts" {
   default     = []
 }
 
+# The format the same except the groups sub-entry (At this point (terraform v0.12.29),
+# it's not possible to include "dynamic" (array type) field when relying
+#
+# Type definition (not strict now)
+# type = map(object({
+#   description                     = string
+#   protocol                        = string
+#   port                            = number
+#   port_name                       = string
+#   timeout_sec                     = number
+#   connection_draining_timeout_sec = number
+#   enable_cdn                      = bool
+#   session_affinity                = string
+#   affinity_cookie_ttl_sec         = number
+#   health_check = object({
+#     check_interval_sec  = number
+#     timeout_sec         = number
+#     healthy_threshold   = number
+#     unhealthy_threshold = number
+#     request_path        = string
+#     port                = number
+#     host                = string
+#     logging             = bool
+#   })
+#   log_config = object({
+#     enable      = bool
+#     sample_rate = number
+#   })
+# }))
+#
+# Example:
+# backends = {
+#   st = {
+#     description                     = "Created by Terraform"
+#     protocol                        = "HTTPS"
+#     port                            = 443
+#     log_config = {
+#       enable = true
+#       sample_rate = 1.0
+#     }
+#   }
+# }
 variable "backends" {
+  type = map
   description = "Map backend indices to list of backend maps."
-  type = map(object({
-    description                     = string
-    protocol                        = string
-    port                            = number
-    port_name                       = string
-    timeout_sec                     = number
-    connection_draining_timeout_sec = number
-    enable_cdn                      = bool
-    session_affinity                = string
-    affinity_cookie_ttl_sec         = number
-    health_check = object({
-      check_interval_sec  = number
-      timeout_sec         = number
-      healthy_threshold   = number
-      unhealthy_threshold = number
-      request_path        = string
-      port                = number
-      host                = string
-      logging             = bool
-    })
-    log_config = object({
-      enable      = bool
-      sample_rate = number
-    })
-    groups = list(object({
-      group                        = string
-      balancing_mode               = string
-      capacity_scaler              = number
-      description                  = string
-      max_connections              = number
-      max_connections_per_instance = number
-      max_connections_per_endpoint = number
-      max_rate                     = number
-      max_rate_per_instance        = number
-      max_rate_per_endpoint        = number
-      max_utilization              = number
-    }))
+}
 
-  }))
+# Due to dynamic nature (groups is a list of maps), the paramter (internal field of backends variable)
+#  has been moved to an independent variable
+#
+# groups = map(object({list(object({
+#   group                        = string
+#   balancing_mode               = string
+#   capacity_scaler              = number
+#   description                  = string
+#   max_connections              = number
+#   max_connections_per_instance = number
+#   max_connections_per_endpoint = number
+#   max_rate                     = number
+#   max_rate_per_instance        = number
+#   max_rate_per_endpoint        = number
+#   max_utilization              = number
+# })}))
+#
+# Example:
+# backend_groups = {
+#   st = [
+#     {
+#       group = google_compute_global_network_endpoint_group.external_proxy.id
+#     },
+#   ]
+# }
+variable "backend_groups" {
+  default = {}
 }
 
 variable "create_url_map" {
